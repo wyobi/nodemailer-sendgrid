@@ -1,23 +1,27 @@
 {
-    "$schema": "https://json.schemastore.org/tsconfig",
-    "display": "Default",
-    "compilerOptions": {
-      "composite": false,
-      "declaration": true,
-      "declarationMap": true,
-      "esModuleInterop": true,
-      "forceConsistentCasingInFileNames": true,
-      "inlineSources": false,
-      "isolatedModules": true,
-      "moduleResolution": "node",  
-      "resolveJsonModule": true,
-      "noUnusedLocals": false,
-      "noUnusedParameters": false,
-      "preserveWatchOutput": true,
-      "skipLibCheck": true,
-      "incremental": true,
-      "strict": true
-    },
-    "exclude": ["node_modules"]
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Default",
+  "compilerOptions": {
+    "composite": false,
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "module": "CommonJS",
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": false,
+    "isolatedModules": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "preserveWatchOutput": true,
+    "skipLibCheck": true,
+    "incremental": true,
+    "strict": true
+  },
+  "exclude": ["node_modules"],
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
   }
-  
+}
