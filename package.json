@@ -18,7 +18,7 @@
   "author": "Andris Reinman",
   "license": "MIT",
   "dependencies": {
-    "@sendgrid/mail": "^6.2.1"
+    "@sendgrid/mail": "^7.7.0"
   },
   "devDependencies": {
     "@parcel/packager-ts": "2.9.2",
