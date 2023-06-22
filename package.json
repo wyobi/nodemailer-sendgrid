@@ -1,9 +1,12 @@
 {
     "name": "nodemailer-sendgrid",
-    "version": "1.0.3",
+    "version": "2.0.0",
     "description": "",
-    "source": "src/index.js",
+    "type": "module",
+    "source": "src/index.ts",
     "main": "dist/main.js",
+    "types": "dist/types.d.ts",
+    "module": "dist/module.js",
     "scripts": {
         "watch": "parcel watch",
         "build": "parcel build"
@@ -18,9 +21,12 @@
         "@sendgrid/mail": "^6.2.1"
     },
     "devDependencies": {
+        "@parcel/packager-ts": "2.9.2",
+        "@parcel/transformer-typescript-types": "2.9.2",
+        "@types/nodemailer": "^6.4.8",
         "eslint-config-nodemailer": "^1.2.0",
-
-        "nodemailer": "^4.6.3",
-        "parcel": "^2.9.2"
+        "nodemailer": "^6.9.3",
+        "parcel": "^2.9.2",
+        "typescript": ">=3.0.0"
     }
 }

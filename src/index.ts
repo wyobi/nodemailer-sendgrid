@@ -1,131 +1,151 @@
-'use strict';
+import packageValues from '../package.json';
+import { setApiKey, send as _send } from '@sendgrid/mail';
 
-const packageData = require('../package.json');
-const sgMail = require('@sendgrid/mail');
+import { readableStreamToString, isDefined, mapStringOrAddress } from './helpers';
+import type { SendCallback, Mail, AttachmentData, MailDataRequired,MailMessage } from './types';
+import  { SendGridTransportBase } from "./base";
 
-class SendGridTransport {
-    constructor(options) {
+type SendGridTransportOptions = {
+    apiKey?:string
+}
+
+
+class SendGridTransport extends SendGridTransportBase {
+    options: SendGridTransportOptions;
+    name: string;
+    version: string;
+    constructor(options:SendGridTransportOptions) {
+        super()
         this.options = options || {};
-        this.name = packageData.name;
-        this.version = packageData.version;
+        this.name = packageValues.name;
+        this.version = packageValues.version;
         if (options.apiKey) {
-            sgMail.setApiKey(options.apiKey);
+            setApiKey(options.apiKey);
         }
     }
 
-    send(mail, callback) {
+    async send(mail: MailMessage, callback: SendCallback<any>) {
         mail.normalize((err, source) => {
             if (err) {
-                return callback(err);
+                return callback(err,  null);
             }
 
-            let msg = {};
-            Object.keys(source || {}).forEach(key => {
+
+            const wow = source ?? {}
+
+            const msg : Partial<MailDataRequired>= {};
+            Object.keys(wow || {}).forEach(key => {
                 switch (key) {
                     case 'subject':
                     case 'text':
                     case 'html':
-                        msg[key] = source[key];
+                        msg[key] = wow[key] as any;
                         break;
                     case 'from':
                     case 'replyTo':
-                        msg[key] = []
-                            .concat(source[key] || [])
-                            .map(entry => ({
-                                name: entry.name,
-                                email: entry.address
-                            }))
+                        msg[key] = [(wow[key] ?? [])].flat().map(mapStringOrAddress)
                             .shift();
                         break;
                     case 'to':
                     case 'cc':
                     case 'bcc':
-                        msg[key] = [].concat(source[key] || []).map(entry => ({
-                            name: entry.name,
-                            email: entry.address
-                        }));
+                        msg[key] = [(wow[key] ?? [])].flat().map(mapStringOrAddress);
                         break;
                     case 'attachments':
-                        {
-                            let attachments = source.attachments.map(entry => {
-                                let attachment = {
-                                    content: entry.content,
-                                    filename: entry.filename,
-                                    type: entry.contentType,
-                                    disposition: 'attachment'
-                                };
-                                if (entry.cid) {
-                                    attachment.content_id = entry.cid;
-                                    attachment.disposition = 'inline';
-                                }
-                                return attachment;
-                            });
-
-                            msg.attachments = [].concat(msg.attachments || []).concat(attachments);
-                        }
+                        this.handleAttachments(wow, msg);
                         break;
                     case 'alternatives':
-                        {
-                            let alternatives = source.alternatives.map(entry => {
-                                let alternative = {
-                                    content: entry.content,
-                                    type: entry.contentType
-                                };
-                                return alternative;
-                            });
-
-                            msg.content = [].concat(msg.content || []).concat(alternatives);
-                        }
+                        this.handleAlternatives(wow, msg);
                         break;
                     case 'icalEvent':
                         {
-                            let attachment = {
-                                content: source.icalEvent.content,
-                                filename: source.icalEvent.filename || 'invite.ics',
+
+                            let attachment : AttachmentData = {
+                                content: readableStreamToString((wow.icalEvent as Mail.IcalAttachment).content ?? "") ,
+                                filename: (wow.icalEvent as Mail.IcalAttachment).filename || 'invite.ics',
                                 type: 'application/ics',
                                 disposition: 'attachment'
                             };
-                            msg.attachments = [].concat(msg.attachments || []).concat(attachment);
+                            msg.attachments = (msg.attachments ?? []).concat(attachment);
                         }
                         break;
                     case 'watchHtml':
                         {
                             let alternative = {
-                                content: source.watchHtml,
+                                content: wow.watchHtml,
                                 type: 'text/watch-html'
                             };
-                            msg.content = [].concat(msg.content || []).concat(alternative);
+                            msg.content = (msg.content ?? []).concat(alternative as any);
                         }
                         break;
                     case 'normalizedHeaders':
-                        msg.headers = msg.headers || {};
-                        Object.keys(source.normalizedHeaders || {}).forEach(header => {
-                            msg.headers[header] = source.normalizedHeaders[header];
+                        /*
+                        const headers = msg.headers || {};
+                        Object.keys(wow.normalizedHeaders || {}).forEach(header => {
+                            headers[header] = wow.normalizedHeaders[header];
                         });
+
+                         msg.headers = headers*/
                         break;
                     case 'messageId':
                         msg.headers = msg.headers || {};
-                        msg.headers['message-id'] = source.messageId;
+                        msg.headers['message-id'] = wow.messageId!;
                         break;
                     default:
-                        msg[key] = source[key];
+                        (msg as any)[key] = (wow as any)[key];
                 }
             });
 
             if (msg.content && msg.content.length) {
                 if (msg.text) {
-                    msg.content.unshift({ type: 'text/plain', content: msg.text });
+                    msg.content.unshift({ type: 'text/plain', value: msg.text });
                     delete msg.text;
                 }
                 if (msg.html) {
-                    msg.content.unshift({ type: 'text/html', content: msg.html });
+                    msg.content.unshift({ type: 'text/html', value: msg.html });
                     delete msg.html;
                 }
             }
 
-            sgMail.send(msg, callback);
+            _send(msg as MailDataRequired, callback  as any);
         });
     }
+    private handleAlternatives(wow: Mail.Options, msg: Partial<MailDataRequired>) {
+        
+            if (!wow.alternatives) return
+            let alternatives = wow.alternatives.map(entry => {
+                let alternative = {
+                    value: readableStreamToString(entry.content ??""),
+                    type: entry.contentType!
+                };
+                return alternative;
+            });
+
+            msg.content = (msg.content ?? []).concat(alternatives);
+        
+    }
+
+    private handleAttachments(wow: Mail.Options, msg: Partial<MailDataRequired>) {
+        let attachments = (wow.attachments ?? []).map(entry => {
+            if (!entry.content || !entry.filename) return;
+            let attachment: AttachmentData = {
+                content: readableStreamToString(entry.content),
+                filename: entry.filename,
+                type: entry.contentType,
+                disposition: 'attachment'
+            };
+            if (entry.cid) {
+                attachment.contentId = entry.cid;
+                attachment.disposition = 'inline';
+            }
+            return attachment;
+        }).filter(isDefined);
+
+        msg.attachments = (msg.attachments ?? []).concat(attachments);
+    }
+
 }
 
-module.exports = options => new SendGridTransport(options);
+export const createSendGridTransport =  (options: SendGridTransportOptions) => new SendGridTransport(options);
+
+export default createSendGridTransport
