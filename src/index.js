@@ -1,6 +1,6 @@
 'use strict';
 
-const packageData = require('./package.json');
+const packageData = require('../package.json');
 const sgMail = require('@sendgrid/mail');
 
 class SendGridTransport {
