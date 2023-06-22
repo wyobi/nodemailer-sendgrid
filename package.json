@@ -19,8 +19,7 @@
     },
     "devDependencies": {
         "eslint-config-nodemailer": "^1.2.0",
-        "grunt": "^1.0.2",
-        "grunt-eslint": "^20.1.0",
+
         "nodemailer": "^4.6.3",
         "parcel": "^2.9.2"
     }
