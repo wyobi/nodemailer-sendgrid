@@ -1,5 +1,5 @@
 import { name, version } from "../package.json";
-import sgMail from "@sendgrid/mail";
+import { MailService } from "@sendgrid/mail";
 
 import {
   readableStreamToString,
@@ -23,13 +23,14 @@ class SendGridTransport extends SendGridTransportBase {
   options: SendGridTransportOptions;
   name: string;
   version: string;
+  private sgMail = new MailService();
   constructor(options: SendGridTransportOptions) {
     super();
     this.options = options ?? {};
     this.name = name;
     this.version = version;
     if (options.apiKey) {
-      sgMail.setApiKey(options.apiKey);
+      this.sgMail.setApiKey(options.apiKey);
     }
   }
 
@@ -120,7 +121,7 @@ class SendGridTransport extends SendGridTransportBase {
         }
       }
 
-      sgMail.send(msg as MailDataRequired, callback as any);
+      this.sgMail.send(msg as MailDataRequired, callback as any);
     });
   }
   private handleAlternatives(
