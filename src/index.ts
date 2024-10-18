@@ -35,95 +35,109 @@ class SendGridTransport extends SendGridTransportBase {
   }
 
   async send(mail: MailMessage, callback: SendCallback<any>) {
-    mail.normalize((err, _source) => {
-      if (err) {
-        return callback(err, null);
-      }
-
-      const source = _source ?? {};
-
-      const msg: Partial<MailDataRequired> = {};
-      Object.keys(source ?? {}).forEach((key) => {
-        switch (key) {
-          case "subject":
-          case "text":
-          case "html":
-            msg[key] = source[key] as any;
-            break;
-          case "from":
-          case "replyTo":
-            msg[key] = [source[key] ?? []]
-              .flat()
-              .map(mapStringOrAddress)
-              .shift();
-            break;
-          case "to":
-          case "cc":
-          case "bcc":
-            msg[key] = [source[key] ?? []].flat().map(mapStringOrAddress);
-            break;
-          case "attachments":
-            this.handleAttachments(source, msg);
-            break;
-          case "alternatives":
-            this.handleAlternatives(source, msg);
-            break;
-          case "icalEvent":
-            {
-              let attachment: AttachmentData = {
-                content: readableStreamToString(
-                  (source.icalEvent as Mail.IcalAttachment).content ?? ""
-                ),
-                filename:
-                  (source.icalEvent as Mail.IcalAttachment).filename ||
-                  "invite.ics",
-                type: "application/ics",
-                disposition: "attachment",
-              };
-              msg.attachments = (msg.attachments ?? []).concat(attachment);
+    try {
+      const msg = await new Promise((resolve, reject) => {
+        mail.normalize((err, _source) => {
+          if (err) {
+            return reject(err);
+          }
+          
+          const msg: Partial<MailDataRequired> = {};
+          const source = _source ?? {};
+          Object.keys(source ?? {}).forEach((key) => {
+            switch (key) {
+              case "subject":
+              case "text":
+              case "html":
+                msg[key] = source[key] as any;
+                break;
+              case "from":
+              case "replyTo":
+                msg[key] = [source[key] ?? []]
+                  .flat()
+                  .map(mapStringOrAddress)
+                  .shift();
+                break;
+              case "to":
+              case "cc":
+              case "bcc":
+                msg[key] = [source[key] ?? []].flat().map(mapStringOrAddress);
+                break;
+              case "attachments":
+                this.handleAttachments(source, msg);
+                break;
+              case "alternatives":
+                this.handleAlternatives(source, msg);
+                break;
+              case "icalEvent":
+                {
+                  let attachment: AttachmentData = {
+                    content: readableStreamToString(
+                      (source.icalEvent as Mail.IcalAttachment).content ?? ""
+                    ),
+                    filename:
+                      (source.icalEvent as Mail.IcalAttachment).filename ||
+                      "invite.ics",
+                    type: "application/ics",
+                    disposition: "attachment",
+                  };
+                  msg.attachments = (msg.attachments ?? []).concat(attachment);
+                }
+                break;
+              case "watchHtml":
+                {
+                  let alternative = {
+                    content: source.watchHtml,
+                    type: "text/watch-html",
+                  };
+                  msg.content = (msg.content ?? []).concat(alternative as any);
+                }
+                break;
+              case "normalizedHeaders":
+                /*
+                            const headers = msg.headers || {};
+                            Object.keys(source.normalizedHeaders || {}).forEach(header => {
+                                headers[header] = source.normalizedHeaders[header];
+                            });
+    
+                            msg.headers = headers*/
+                break;
+              case "messageId":
+                msg.headers = msg.headers ?? {};
+                msg.headers["message-id"] = source.messageId!;
+                break;
+              default:
+                (msg as any)[key] = (source as any)[key];
             }
-            break;
-          case "watchHtml":
-            {
-              let alternative = {
-                content: source.watchHtml,
-                type: "text/watch-html",
-              };
-              msg.content = (msg.content ?? []).concat(alternative as any);
+          });
+    
+          if (msg?.content?.length) {
+            if (msg.text) {
+              msg.content.unshift({ type: "text/plain", value: msg.text });
+              delete msg.text;
             }
-            break;
-          case "normalizedHeaders":
-            /*
-                        const headers = msg.headers || {};
-                        Object.keys(source.normalizedHeaders || {}).forEach(header => {
-                            headers[header] = source.normalizedHeaders[header];
-                        });
+            if (msg.html) {
+              msg.content.unshift({ type: "text/html", value: msg.html });
+              delete msg.html;
+            }
+          }
 
-                         msg.headers = headers*/
-            break;
-          case "messageId":
-            msg.headers = msg.headers ?? {};
-            msg.headers["message-id"] = source.messageId!;
-            break;
-          default:
-            (msg as any)[key] = (source as any)[key];
-        }
-      });
+          resolve(msg);
+        });
+      })
 
-      if (msg?.content?.length) {
-        if (msg.text) {
-          msg.content.unshift({ type: "text/plain", value: msg.text });
-          delete msg.text;
-        }
-        if (msg.html) {
-          msg.content.unshift({ type: "text/html", value: msg.html });
-          delete msg.html;
-        }
+      return await this.sgMail.send(msg as MailDataRequired, callback as any);
+    }
+    catch(err) {
+      if(callback) {
+        callback(err as Error | null, null);
       }
-
-      this.sgMail.send(msg as MailDataRequired, callback as any);
-    });
+      else {
+        throw err;
+      }
+    }
   }
+  
   private handleAlternatives(
     source: Mail.Options,
     msg: Partial<MailDataRequired>
