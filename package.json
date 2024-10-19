@@ -9,8 +9,7 @@
   "scripts": {
     "watch": "parcel watch",
     "build": "parcel build",
-    "example": "ts-node examples/mail.ts",
-    "prepare": "npm run build"
+    "example": "ts-node examples/mail.ts"
   },
   "keywords": [
     "nodemailer",
