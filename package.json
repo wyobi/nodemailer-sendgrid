@@ -19,17 +19,17 @@
   "author": "Andris Reinman",
   "license": "MIT",
   "dependencies": {
-    "@sendgrid/mail": "^7.7.0"
+    "@sendgrid/mail": "^8.1.4"
   },
   "devDependencies": {
-    "@parcel/packager-ts": "2.9.2",
-    "@parcel/transformer-typescript-types": "2.9.2",
-    "@types/nodemailer": "^6.4.8",
+    "@parcel/packager-ts": "2.12.0",
+    "@parcel/transformer-typescript-types": "2.12.0",
+    "@types/nodemailer": "^6.4.16",
     "eslint-config-nodemailer": "^1.2.0",
-    "nodemailer": "^6.9.3",
-    "parcel": "^2.9.2",
-    "ts-node": "^10.9.1",
-    "typescript": ">=3.0.0"
+    "nodemailer": "^6.9.15",
+    "parcel": "^2.12.0",
+    "ts-node": "^10.9.2",
+    "typescript": ">=5.6.3"
   },
   "engines": {
     "node": ">= 12"
