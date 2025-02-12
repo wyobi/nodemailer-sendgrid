@@ -1,7 +1,7 @@
 import {MailService as $fJU0O$MailService} from "@sendgrid/mail";
 
 var $2f9778488711ed67$exports = {};
-$2f9778488711ed67$exports = JSON.parse('{"name":"nodemailer-sendgrid-create-transport","version":"2.0.0","description":"","source":"src/index.ts","main":"dist/main.js","types":"dist/main.d.ts","module":"dist/module.js","scripts":{"watch":"parcel watch","build":"parcel build","example":"ts-node examples/mail.ts"},"keywords":["nodemailer","sendgrid"],"author":"Andris Reinman","license":"MIT","dependencies":{"@sendgrid/mail":"^8.1.4"},"devDependencies":{"@parcel/packager-ts":"2.12.0","@parcel/transformer-typescript-types":"2.12.0","@types/nodemailer":"^6.4.16","eslint-config-nodemailer":"^1.2.0","nodemailer":"^6.9.15","parcel":"^2.12.0","ts-node":"^10.9.2","typescript":">=5.6.3"},"engines":{"node":">= 12"}}');
+$2f9778488711ed67$exports = JSON.parse("{\"name\":\"nodemailer-sendgrid-create-transport\",\"version\":\"2.0.1\",\"description\":\"\",\"source\":\"src/index.ts\",\"main\":\"dist/main.js\",\"types\":\"dist/main.d.ts\",\"module\":\"dist/module.js\",\"scripts\":{\"watch\":\"parcel watch\",\"build\":\"parcel build\",\"example\":\"ts-node examples/mail.ts\"},\"keywords\":[\"nodemailer\",\"sendgrid\"],\"author\":\"Andris Reinman\",\"license\":\"MIT\",\"dependencies\":{\"@sendgrid/helpers\":\"^8.0.0\",\"@sendgrid/mail\":\"^8.1.4\"},\"devDependencies\":{\"@parcel/packager-ts\":\"2.13.3\",\"@parcel/transformer-typescript-types\":\"^2.13.3\",\"@types/nodemailer\":\"^6.4.16\",\"eslint-config-nodemailer\":\"^1.2.0\",\"nodemailer\":\"^6.9.15\",\"parcel\":\"^2.13.3\",\"ts-node\":\"^10.9.2\",\"typescript\":\">=5.6.3\"},\"engines\":{\"node\":\">= 12\"}}");
 
 
 
@@ -26,8 +26,7 @@ class $f05bdfe98771f041$export$fbf60eb5c5bd4672 {
 
 class $68884b6fd70110ce$var$SendGridTransport extends (0, $f05bdfe98771f041$export$fbf60eb5c5bd4672) {
     constructor(options){
-        super();
-        this.sgMail = new (0, $fJU0O$MailService)();
+        super(), this.sgMail = new (0, $fJU0O$MailService)();
         this.options = options !== null && options !== void 0 ? options : {};
         this.name = (0, $2f9778488711ed67$exports.name);
         this.version = (0, $2f9778488711ed67$exports.version);
@@ -154,6 +153,15 @@ class $68884b6fd70110ce$var$SendGridTransport extends (0, $f05bdfe98771f041$expo
             if (entry.cid) {
                 attachment.contentId = entry.cid;
                 attachment.disposition = "inline";
+                attachment.toJSON = function() {
+                    var d = {};
+                    for(const k in this){
+                        if (k === "toJSON") continue;
+                        else if (k === "contentId") d["content_id"] = this[k];
+                        else d[k] = this[k];
+                    }
+                    return d;
+                };
             }
             return attachment;
         }).filter((0, $929f79a62ac887ad$export$4e62c701997796c1));

@@ -1,5 +1,6 @@
 import MailMessage from "nodemailer/lib/mailer/mail-message";
 import { Transport } from "nodemailer";
+import { ClientResponse } from "@sendgrid/mail";
 type SendCallback<T> = (err: Error | null, info: T) => void;
 declare abstract class SendGridTransportBase<T = any> implements Transport<T> {
     abstract name: string;
@@ -17,7 +18,7 @@ declare class SendGridTransport extends SendGridTransportBase {
     name: string;
     version: string;
     constructor(options: SendGridTransportOptions);
-    send(mail: MailMessage, callback: SendCallback<any>): Promise<[import("@sendgrid/mail").ClientResponse, {}] | undefined>;
+    send(mail: MailMessage, callback: SendCallback<any>): Promise<[ClientResponse, {}] | undefined>;
 }
 export const createSendGridTransport: (options: SendGridTransportOptions) => SendGridTransport;
 export default createSendGridTransport;

@@ -170,6 +170,21 @@ class SendGridTransport extends SendGridTransportBase {
         if (entry.cid) {
           attachment.contentId = entry.cid;
           attachment.disposition = "inline";
+          (attachment as any).toJSON = function() {
+            var d = {} as any;
+            for(const k in this) {
+              if(k === "toJSON") {
+                continue;
+              }
+              else if(k === "contentId") {
+                d["content_id"] = this[k];
+              }
+              else {
+                d[k] = this[k];
+              }
+            }
+            return d;
+          };
         }
         return attachment;
       })
